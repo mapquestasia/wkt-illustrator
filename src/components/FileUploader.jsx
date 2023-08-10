@@ -18,6 +18,7 @@ export const FileUploader = ({ setWktData }) => {
           onChange={(e) => {
             handleFileChosen(e.target.files[0]);
           }}
+          placeholder="Choose"
         />
       </form>
     </div>

@@ -1,12 +1,10 @@
-import React, { useEffect, useRef, useState } from "react";
-import * as d3 from "d3";
+import { useEffect, useRef, useState } from "react";
 import "./Map.css";
 
 import { FileUploader } from "./FileUploader";
 import { parse } from "wellknown";
 
 export const MapCanvas = () => {
-  const [isChecked, setIsChecked] = useState(false);
   const [wktData, setWktData] = useState(null);
 
   const initialZoom = 1.0;
@@ -14,6 +12,8 @@ export const MapCanvas = () => {
   const [zoom, setZoom] = useState(initialZoom);
 
   const [isLoading, setIsLoading] = useState(false);
+
+  const [executionTime, setExecutionTime] = useState(0);
 
   const canvasRef = useRef(null);
 
@@ -61,7 +61,7 @@ export const MapCanvas = () => {
     let x = (lat - minMax.minX) * scale;
     let y = (long - minMax.minY) * scale;
 
-    //FlipY illustrate
+    //Flip Y illustrate
     const halfCanvasHeight = canvas.height / 2;
     if (y > halfCanvasHeight) {
       y = y - (y - halfCanvasHeight) * 2;
@@ -72,14 +72,7 @@ export const MapCanvas = () => {
     return [x, y];
   };
 
-  //Call everytime wktData change.
-  useEffect(() => {
-    if (wktData === null) return;
-
-    setIsLoading(true);
-    console.log("is loading...");
-    console.log(zoom);
-
+  const drawDataOnCanvas = () => {
     const canvas = canvasRef.current;
     const ctx = canvas.getContext("2d");
     const centerX = canvas.width / 2;
@@ -122,9 +115,23 @@ export const MapCanvas = () => {
       ctx.closePath();
       ctx.stroke();
     });
+  };
 
-    console.log("Finish");
-    setIsLoading(false);
+  //Call everytime wktData and zoom change.
+  useEffect(() => {
+    if (wktData === null) return;
+
+    const startTime = performance.now();
+
+    console.log(isLoading);
+
+    drawDataOnCanvas();
+
+    const endTime = performance.now();
+    const exeTime = endTime - startTime;
+
+    setExecutionTime(exeTime);
+    console.log(`Execution Time: ${exeTime.toFixed(2)} ms`);
   }, [wktData, zoom]);
 
   const handleZoomIn = () => {
@@ -136,26 +143,16 @@ export const MapCanvas = () => {
   };
 
   return (
-    <div>
-      <FileUploader setWktData={setWktData} />
-      {/* <div>
-        <label>Convert Lat/Long to X/Y</label>
-        <input
-          type="checkbox"
-          onChange={(e) => setIsChecked(e.target.checked)}
-        />
-      </div> */}
-      {/* <div>
-        <button onClick={handleZoomIn}>+</button>
-        <button onClick={handleZoomOut}>-</button>
-      </div> */}
-      {isLoading && <p>Loading ...</p>}
-      <canvas
-        ref={canvasRef}
-        width={600}
-        height={600}
-        style={{ border: "1px solid red" }}
-      ></canvas>
+    <div className="container">
+      <div className="upper-section">
+        <FileUploader setWktData={setWktData} />
+        <div className="zoom-group">
+          <button onClick={handleZoomIn}>+</button>
+          <button onClick={handleZoomOut}>-</button>
+        </div>
+      </div>
+      <p>Execution Time: {executionTime.toFixed(4)} ms</p>
+      <canvas ref={canvasRef} height={600} width={600}></canvas>
     </div>
   );
 };
